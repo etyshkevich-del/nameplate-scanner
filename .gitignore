@@ -1,0 +1,22 @@
+# Android Studio and local SDK paths
+.idea/
+*.iml
+local.properties
+
+# Gradle caches and generated output
+.gradle/
+**/build/
+build/
+
+# Large runtime artifacts are distributed separately, never through Git
+app/src/main/assets/*.litertlm
+*.apk
+*.aab
+
+# Local smoke-test output
+smoke/*.jar
+smoke/*.xlsx
+
+# OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,14 @@
+This application uses Google AI Edge LiteRT-LM and is based on the public
+Google AI Edge Gallery runtime integration patterns.
+
+Google AI Edge Gallery:
+Copyright 2025-2026 Google LLC
+Licensed under the Apache License, Version 2.0.
+https://github.com/google-ai-edge/gallery
+
+The original Excel template "ПХ.xlsx" was supplied by the application user.
+
+PDF text extraction uses PdfBox-Android:
+Copyright Tom Roush and Apache PDFBox contributors
+Licensed under the Apache License, Version 2.0.
+https://github.com/TomRoush/PdfBox-Android
