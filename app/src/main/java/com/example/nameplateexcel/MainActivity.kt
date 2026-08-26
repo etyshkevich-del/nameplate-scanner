@@ -899,9 +899,19 @@ $question
         val end = raw.lastIndexOf('}')
         require(start >= 0 && end > start) { "JSON не найден." }
         val json = JSONObject(raw.substring(start, end + 1))
+        val extracted = specs.associate { spec ->
+            spec.jsonKey to if (json.isNull(spec.jsonKey)) "" else json.optString(spec.jsonKey, "")
+        }
+        val normalized = NameplateResultNormalizer.normalize(extracted)
         specs.forEach { spec ->
-            val value = if (json.isNull(spec.jsonKey)) "" else json.optString(spec.jsonKey, "")
-            editors[spec.jsonKey]?.setText(value.trim())
+            editors[spec.jsonKey]?.setText(normalized.values[spec.jsonKey].orEmpty())
+        }
+        if (normalized.rejectedFields.isNotEmpty()) {
+            Toast.makeText(
+                this,
+                "Сомнительные значения оставлены пустыми. Проверьте шильдик вручную.",
+                Toast.LENGTH_LONG,
+            ).show()
         }
     }
 
@@ -1025,7 +1035,7 @@ $question
         private const val PREVIOUS_BUNDLED_MODEL_FILE = "bundled_SmolVLM2-2.2B.litertlm"
 
         private const val PROMPT = """
-Проанализируй фотографию шильдика электродвигателя. Верни ТОЛЬКО один JSON-объект без markdown, пояснений и дополнительных ключей:
+Ты читаешь паспортную табличку электродвигателя. Верни ТОЛЬКО один JSON-объект без markdown, пояснений и дополнительных ключей:
 {
   "ip_rating": "",
   "efficiency": "",
@@ -1037,19 +1047,21 @@ $question
   "phases": "",
   "rated_voltage": ""
 }
-Правила:
-- переписывай значения ровно с шильдика, сохраняя единицы измерения;
-- ip_rating: степень защиты оболочки, например IP55;
-- efficiency: КПД/η/IE, если указаны;
-- rated_power: номинальная мощность, обычно кВт;
-- rated_current: номинальный ток, обычно А;
-- explosion_protection: полная маркировка взрывозащиты/Ex;
-- rated_speed: номинальная частота вращения, об/мин или rpm;
-- power_factor: cos φ;
-- phases: число фаз;
-- rated_voltage: номинальное напряжение, включая варианты соединения Δ/Y;
-- если значение не видно или его нет, оставь пустую строку;
-- ничего не вычисляй и не угадывай.
+Сначала мысленно найди заголовки таблицы и проследи каждый столбец строго вниз до значения. Особенно различай соседние столбцы A, kW, min⁻¹, cos φ и η %.
+
+Правила полей:
+- ip_rating: только степень защиты вида IP55, IP68 и т. п.;
+- efficiency: только числовой КПД из столбца η/% или рядом с обозначением КПД. IE1/IE2/IE3 — класс эффективности, а не значение КПД;
+- rated_power: число из столбца kW/кВт с единицей. Обозначение двигателя вроде BD 160M1-2 — не мощность;
+- rated_current: число или пара чисел из столбца A/А с единицей, например "14.4/8.4 A";
+- explosion_protection: только полная маркировка, например "1Ex d IIB T4". PTC — датчик температуры, не взрывозащита. Одинокий знак "Ex" недостаточен;
+- rated_speed: число из столбца min⁻¹, 1/min, r/min, rpm или об/мин с единицей. Например 1460 min⁻¹ — скорость, не мощность;
+- power_factor: только значение из столбца cos φ, обычно от 0 до 1;
+- phases: число фаз из "3~", "3-ph" или надписи о фазах;
+- rated_voltage: напряжение из столбца V/В, сохрани обе схемы соединения, например "Δ220/Y380 V";
+- 50 Hz — частота сети, не ток и не скорость;
+- переписывай десятичные значения и единицы с таблички; ничего не вычисляй;
+- если подпись, единица или принадлежность числа к столбцу не видна уверенно, верни пустую строку. Не угадывай по похожим цифрам.
 """
     }
 }
